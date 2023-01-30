@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const models = require('./models')
 const port = 8080;
 
 app.use(express.json());
@@ -54,4 +55,11 @@ app.post('/products',(req,res) => {
 
 app.listen(port, () => {
     console.log('마켓이 서버가 작동중입니다.')
+    models.sequelize.sync().then(()=>{
+        console.log('DB 연결 성공!');
+    }).catch((err)=>{
+        console.error(err);
+        console.log('DB 연결 에러');
+        process.exit();
+    });
 })
