@@ -1,56 +1,76 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const models = require('./models')
+const models = require('./models');
+const { json } = require('sequelize');
 const port = 8080;
 
 app.use(express.json());
 app.use(cors());
 
 app.get('/products',(req,res) => {
-    const query = req.query;
-    console.log(query);
-    res.send({
-        products: [
-            {
-              id: 1,
-              name: "농구공",
-              price: 100000,
-              seller: "조던",
-              imageUrl: "images/products/basketball1.jpeg",
-            },
-            {
-              id: 2,
-              name: "축구공",
-              price: 50000,
-              seller: "메시",
-              imageUrl: "images/products/soccerball1.jpg",
-            },
-            {
-              id: 3,
-              name: "키보드",
-              price: 10000,
-              seller: "그랩",
-              imageUrl: "images/products/keyboard1.jpg",
-            }
-        ]
+
+    models.product.findAll({
+        order: [["createdAt", "DESC"]],
+        attributes: ["id", "name", "price", "createdAt", "seller","imageUrl"],
+    }).then((result)=> {
+        console.log("PRODUCTS : ", result);
+        res.send({
+            products : result
+        })
+    }).catch((error)=>{
+        console.log(error);
+        res.send("에러발생");
     });
 });
 
 app.get('/products/:id', (req,res) => {
     const params = req.params;
     const {id} = params;
-    res.send(`id는 ${id}입니다.`);
+
+    models.product.findOne({
+        where : {
+            id : id
+        }
+    }).then((result)=>{
+        console.log("result : ", result);
+        res.send({
+            product: result
+        });
+    }).catch((error)=> {
+        console.log(error);
+        res.send("상품 조회에 에러가 발생하였습니다.");
+    });
 
 });
 
 
 app.post('/products',(req,res) => {
     const body = req.body;
-    res.send({
-        body: body
+    const {name, description, price, seller} = body;
+
+    console.log(name);
+    console.log(description);    
+    console.log(price);    
+    console.log(seller);       
+
+    if(!name || !description || !price || !seller) {
+        res.send('모든 필드를 입력해주세요');
+    }
+    models.product.create({
+        name,
+        description,
+        price,
+        seller,
+    }).then((result)=>{
+        console.log("상품 생성결과",result);
+        res.send({
+            result,
+        });
+    }).catch((error)=>{
+        console.log(error);
+        res.send('상품 업로드에 문제가 발생하였습니다.')
     });
-    res.send('상품이 등록되었습니다.');
 });
 
 app.listen(port, () => {
