@@ -20,11 +20,24 @@ app.use(express.json());
 app.use(cors());
 app.use('/uploads', express.static('uploads'))
 
+app.get('/banners',(req,res) => {
+    models.Banner.findAll({
+        limit: 2
+    }).then((result)=> {
+        res.send({
+            banners: result
+        })
+    }).catch((error)=> {
+        console.error(error);
+        res.status(500).send('에러가 발생하였습니다.');
+    })
+});
+
 app.get('/products',(req,res) => {
 
     models.product.findAll({
         order: [["createdAt", "DESC"]],
-        attributes: ["id", "name", "price", "createdAt", "seller","imageUrl"],
+        attributes: ["id", "name", "price", "createdAt", "seller","imageUrl","soldout"],
     }).then((result)=> {
         console.log("PRODUCTS : ", result);
         res.send({
@@ -74,7 +87,8 @@ app.post('/products',(req,res) => {
         description,
         price,
         seller,
-        imageUrl
+        imageUrl,
+        soldout
     }).then((result)=>{
         console.log("상품 생성결과",result);
         res.send({
@@ -92,6 +106,25 @@ app.post('/image',upload.single('image'),(req,res) => {
         imageUrl : file.path
     })
 });
+
+app.post('/purchase/:id', (req,res) => {
+    const {id} = req.params;
+    models.product.update({
+        soldout : 1
+    }, {
+        where: {
+            id
+        }
+    }).then((result) => {
+        res.send({
+            result: true
+        });
+    }).catch((error)=> {
+        console.error(error);
+        res.status(500).send('에러가 발생했습니다.');
+    })
+});
+
 
 app.listen(port, () => {
     console.log('마켓이 서버가 작동중입니다.')
